@@ -33,12 +33,20 @@ android {
 }
 
 dependencies {
+  implementation(libs.androidx.ui)
+  implementation(libs.androidx.material)
+  implementation(libs.ui.tooling.preview)
+  debugImplementation(libs.androidx.ui.tooling)
+  debugImplementation(libs.ui.test.manifest)
+  implementation(libs.activity.compose)
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.appcompat)
   implementation(libs.material)
   implementation(libs.androidx.activity)
   implementation(libs.androidx.constraintlayout)
+  implementation(libs.androidx.runtime.android)
+  implementation(libs.androidx.material3.android)
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
