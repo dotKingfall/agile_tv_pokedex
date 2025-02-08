@@ -30,6 +30,13 @@ android {
   kotlinOptions {
     jvmTarget = "11"
   }
+
+  buildFeatures {
+    compose = true
+  }
+  composeOptions {
+    kotlinCompilerExtensionVersion = "1.5.14" // Example version
+  }
 }
 
 dependencies {
@@ -39,6 +46,7 @@ dependencies {
   debugImplementation(libs.androidx.ui.tooling)
   debugImplementation(libs.ui.test.manifest)
   implementation(libs.activity.compose)
+  implementation(libs.androidx.graphics.shapes)
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.appcompat)
