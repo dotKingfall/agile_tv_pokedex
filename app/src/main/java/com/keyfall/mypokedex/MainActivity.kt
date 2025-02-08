@@ -6,8 +6,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,12 +27,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -50,9 +50,8 @@ class MainActivity : AppCompatActivity() {
 
 @Composable
 fun FakeAppBar(){
-  var searchImput by remember { mutableStateOf("") }
+  var searchInput by remember { mutableStateOf("") }
   var hideHintText by remember { mutableStateOf(true) }
-  val focusRequest = remember { FocusRequester() }
 
   Box(
     modifier = Modifier
@@ -92,21 +91,20 @@ fun FakeAppBar(){
       )
 
       BasicTextField(
-        value = searchImput,
+        value = searchInput,
         maxLines = 1,
         singleLine = true,
         textStyle = searchInputStyle,
         onValueChange = {
-            userInput -> searchImput = userInput
+            userInput -> searchInput = userInput
         },
         modifier = Modifier
           .align(Alignment.BottomEnd)
           .fillMaxWidth(.47f)
           .height(45.dp)
-          .padding(top = 2.dp, end = 15.dp)
-          .focusRequester(focusRequest)
+          .padding(top = 10.dp, end = 15.dp)
           .onFocusChanged {
-            hideHintText = !hideHintText && searchImput.isEmpty()
+            hideHintText = if (searchInput.isEmpty()) !hideHintText else hideHintText
           }
           .drawBehind {
             if (hideHintText) {
@@ -133,32 +131,47 @@ fun FakeAppBar(){
 
 @Composable
 fun MyPokedex(){
+  val focusManager = LocalFocusManager.current
+
   MaterialTheme {
-      Scaffold(
+    Scaffold(
+      modifier = Modifier
+    ){ innerPadding ->
+      Box( //BOX FOR BORDER
         modifier = Modifier
-      ){ innerPadding ->
-        Box( //BOX FOR BORDER
+          .fillMaxSize()
+          .border(
+            BorderStroke(15.dp, mainRed),
+            RoundedCornerShape(
+              bottomStart = 50.dp,
+              bottomEnd = 50.dp,
+            ),
+          )
+      )
+
+      Box{
+        FakeAppBar()
+        Box(
           modifier = Modifier
             .fillMaxSize()
-            .border(
-              BorderStroke(15.dp, mainRed),
-              RoundedCornerShape(
-                bottomStart = 50.dp,
-                bottomEnd = 50.dp,
-              ),
-            )
-        )
-
-        Box{
-          FakeAppBar()
-          Box(
-            modifier = Modifier
-              .fillMaxSize()
-              .padding(innerPadding)
-              .padding(top = 60.dp, start = 15.dp, end = 15.dp)
-          )
+            .padding(innerPadding)
+            .padding(top = 60.dp, start = 15.dp, end = 15.dp)
+            .pointerInput(Unit) {
+              detectTapGestures(
+                onTap = {
+                  focusManager.clearFocus()
+                },
+                onPress = {
+                  tryAwaitRelease()
+                  focusManager.clearFocus()
+                },
+              )
+            }
+        ){
+          /*TODO CALL ANOTHER FUNCTION TO GET THE LIST OF POKEMON*/
         }
       }
+    }
   }
 }
 
