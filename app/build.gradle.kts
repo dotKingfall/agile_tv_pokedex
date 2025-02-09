@@ -46,6 +46,7 @@ dependencies {
   implementation(libs.retrofit2.kotlinx.serialization.converter)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.serialization.json)
+  implementation(libs.okhttp)
 
   //FOR UI ELEMENTS
   implementation(libs.androidx.ui)

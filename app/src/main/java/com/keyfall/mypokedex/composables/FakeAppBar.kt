@@ -70,7 +70,7 @@ fun FakeAppBar(){
           .aspectRatio(16f / 9f)
       )
 
-      BasicTextField(
+      BasicTextField( //TODO SEARCH ALGORITHM
         value = searchInput,
         maxLines = 1,
         singleLine = true,

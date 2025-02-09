@@ -15,8 +15,8 @@ data class Pokemon(
 
 @Serializable
 data class PokemonResponse(
-  val id: Int,
   val name: String,
+  val url: String,
 )
 
 @Serializable
