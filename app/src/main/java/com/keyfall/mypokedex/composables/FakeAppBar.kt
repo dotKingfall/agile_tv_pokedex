@@ -29,8 +29,7 @@ import com.keyfall.mypokedex.searchHintStyle
 import com.keyfall.mypokedex.searchInputStyle
 
 @Composable
-fun FakeAppBar(){
-  var searchInput by remember { mutableStateOf("") }
+fun FakeAppBar(searchInput: String, onSearchInputChange: (String) -> Unit){
   var hideHintText by remember { mutableStateOf(true) }
 
   Box(
@@ -70,13 +69,13 @@ fun FakeAppBar(){
           .aspectRatio(16f / 9f)
       )
 
-      BasicTextField( //TODO SEARCH ALGORITHM
+      BasicTextField(
         value = searchInput,
         maxLines = 1,
         singleLine = true,
         textStyle = searchInputStyle,
-        onValueChange = {
-            userInput -> searchInput = userInput
+        onValueChange = { newSearchInput ->
+          onSearchInputChange(newSearchInput)
         },
         modifier = Modifier
           .align(Alignment.BottomEnd)

@@ -7,6 +7,8 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,10 +20,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
@@ -44,40 +47,38 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.keyfall.mypokedex.Pokemon
+import com.keyfall.mypokedex.PokemonApiPagination
 import com.keyfall.mypokedex.PokemonResponse
 import com.keyfall.mypokedex.R
 import com.keyfall.mypokedex.RetroInstance
 import com.keyfall.mypokedex.mainRed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.text.contains
 
 val apiCallTextStyle = TextStyle(
   color = mainRed,
   fontSize = 24.sp
 )
 
+const val pokemonLimit = 3000
+const val limitPerPage = 20
+
 @Composable
-fun Pokelist(){
+fun Pokelist(searchInput: String){
   var pokemonList by remember { mutableStateOf(listOf<PokemonResponse>()) }
   var isLoadingPokemonList by remember { mutableStateOf(false) }
   var isLoadingSuccessful by remember { mutableStateOf(true) }
-
-  val endlessLoop = rememberInfiniteTransition(label = "infinite transition")
-  val pokeballLoop by endlessLoop.animateFloat(
-    initialValue = 0f,
-    targetValue = 360f,
-    animationSpec = infiniteRepeatable(
-      animation = tween(durationMillis = 2000, easing = LinearEasing)
-    ), label = "rotation"
-  )
+  var pokeApiPagination by remember { mutableStateOf<PokemonApiPagination?>(null) }
+  val pokelistState = rememberLazyListState()
 
   LaunchedEffect(key1 = Unit) {
     isLoadingPokemonList = true
     withContext(Dispatchers.IO){
       try{
-        val pokeapiResponse = RetroInstance.pokeApiService.getPokemonList(20, 0)
-        pokemonList = pokeapiResponse.results //TODO TAKE OTHER ARGUMENTS TO DO PAGINATION
+        val pokeapiResponse = RetroInstance.pokeApiService.getPokemonList(pokemonLimit, 0) //TODO PAGINATION
+        pokeApiPagination = pokeapiResponse
+        pokemonList = pokeapiResponse.results
       }
       catch(e: Exception){
         Log.e("ErrorLoadingAPIData", e.message.toString())
@@ -87,76 +88,51 @@ fun Pokelist(){
     }
   }
 
-  Column { //TODO MAKE COLUMN SCROLLABLE
+  Column {
     if(isLoadingPokemonList){
-      Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-          .fillMaxSize()
-      ){
-        Column(
-          horizontalAlignment = Alignment.CenterHorizontally
-        ){
-          Image(
-            painter = painterResource(id = R.drawable.pokeball),
-            contentDescription = "pokeball",
-            modifier = Modifier
-              .width(80.dp)
-              .height(80.dp)
-              .padding(bottom = 8.dp)
-              .rotate(pokeballLoop)
-          )
-          Text(
-            "Loading...",
-            style = apiCallTextStyle,
-            textAlign = TextAlign.Center
-          )
-        }
-      }
+      LoadingScreen()
     }
     else if(!isLoadingSuccessful){
-      Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-          .fillMaxSize()
-      ){
-        Column(
-          horizontalAlignment = Alignment.CenterHorizontally
-        ){
-          Image(
-            painter = painterResource(id = R.drawable.error),
-            contentDescription = "error_image",
-            modifier = Modifier
-              .width(80.dp)
-              .height(80.dp)
-              .padding(bottom = 8.dp)
-          )
-          Text(
-            "Who's this poke-Error?",
-            style = apiCallTextStyle,
-            textAlign = TextAlign.Center
-          )
-          Text(
-            "(Something wrong has happened, please relaunch the app)",
-            style = TextStyle(mainRed, fontSize = 15.sp),
-            textAlign = TextAlign.Center
-          )
-        }
-      }
+      ErrorScreen()
     }
     else{
-      LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        modifier = Modifier
-          .fillMaxSize()
-      ){
-        items(pokemonList){ pokemon ->
-          Pokecard(pokemon.name, pokemon.url)
+      val filteredList = remember(searchInput, pokemonList) {
+        if (searchInput.isEmpty()) {
+          pokemonList
+        } else {
+          pokemonList.filter { it.name.contains(searchInput, ignoreCase = true) }
+        }
+      }
+
+      Column{
+        if(filteredList.isNotEmpty()){
+          LazyColumn( //SHOW LIST OF POKEMON
+            state = pokelistState,
+            contentPadding = PaddingValues(25.dp),
+            modifier = Modifier
+              .fillMaxWidth()
+              .fillMaxHeight(if (searchInput.isEmpty()){.92f} else{1f})
+          ){
+            items(filteredList){ pokemon ->
+              Pokecard(pokemon.name, pokemon.url)
+            }
+          }
+        }
+        else{
+          NotFoundScreen()
+        }
+
+        Box( //PAGINATION BUTTONS
+          modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+        ){
+          if(searchInput.isEmpty()){
+            PagesRow(pokemonList.size)
+          }
         }
       }
     }
-
-    //TODO NEXT AND PREVIOUS BUTTONS
   }
 }
 
@@ -235,4 +211,142 @@ fun Pokecard(
       )
 
   )
+}
+
+@Composable
+fun PagesRow(pokelistSize: Int){
+  val limit = (pokelistSize / limitPerPage)
+  val pages = List(limit){it + 1}
+
+  LazyRow(
+    horizontalArrangement = Arrangement.spacedBy(15.dp),
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(top = 15.dp)
+      .padding(horizontal = 50.dp)
+  ){
+    items(pages){page ->
+      Box( //TODO ONCLICK
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+          .fillMaxHeight()
+          .drawBehind {
+            drawRoundRect(
+              color = mainRed,
+              cornerRadius = CornerRadius(17.dp.toPx()),
+              style = Fill
+            )
+          }
+      ){
+        Text(
+          page.toString().padStart(2, '0'),
+          style = apiCallTextStyle, color = Color.White,
+          modifier = Modifier
+            .padding(5.dp)
+        )
+      }
+    }
+  }
+}
+
+//STATES
+@Composable
+fun LoadingScreen(){
+  val endlessLoop = rememberInfiniteTransition(label = "infinite transition")
+  val pokeballLoop by endlessLoop.animateFloat(
+    initialValue = 0f,
+    targetValue = 360f,
+    animationSpec = infiniteRepeatable(
+      animation = tween(durationMillis = 2000, easing = LinearEasing)
+    ), label = "rotation"
+  )
+
+  Box(
+    contentAlignment = Alignment.Center,
+    modifier = Modifier
+      .fillMaxSize()
+  ){
+    Column(
+      horizontalAlignment = Alignment.CenterHorizontally
+    ){
+      Image(
+        painter = painterResource(id = R.drawable.pokeball),
+        contentDescription = "pokeball",
+        modifier = Modifier
+          .width(80.dp)
+          .height(80.dp)
+          .padding(bottom = 8.dp)
+          .rotate(pokeballLoop)
+      )
+      Text(
+        "Loading...",
+        style = apiCallTextStyle,
+        textAlign = TextAlign.Center
+      )
+    }
+  }
+}
+
+@Composable
+fun ErrorScreen(){
+  Box(
+    contentAlignment = Alignment.Center,
+    modifier = Modifier
+      .fillMaxSize()
+  ){
+    Column(
+      horizontalAlignment = Alignment.CenterHorizontally
+    ){
+      Image(
+        painter = painterResource(id = R.drawable.error),
+        contentDescription = "error_image",
+        modifier = Modifier
+          .width(80.dp)
+          .height(80.dp)
+          .padding(bottom = 8.dp)
+      )
+      Text(
+        "Who's this poke-Error?",
+        style = apiCallTextStyle,
+        textAlign = TextAlign.Center
+      )
+      Text(
+        "(Something wrong has happened, please relaunch the app)",
+        style = TextStyle(mainRed, fontSize = 15.sp),
+        textAlign = TextAlign.Center
+      )
+    }
+  }
+}
+
+@Composable
+fun NotFoundScreen(){
+  Box(
+    contentAlignment = Alignment.Center,
+    modifier = Modifier
+      .fillMaxSize()
+  ){
+    Column(
+      horizontalAlignment = Alignment.CenterHorizontally
+    ){
+      Image(
+        painter = painterResource(id = R.drawable.error),
+        contentDescription = "error_image",
+        modifier = Modifier
+          .width(80.dp)
+          .height(80.dp)
+          .padding(bottom = 8.dp)
+      )
+      Text(
+        "Who's this Pokémon?",
+        style = apiCallTextStyle,
+        textAlign = TextAlign.Center
+      )
+      Text(
+        "(No, seriously, we don't have that one)",
+        style = TextStyle(mainRed, fontSize = 15.sp),
+        textAlign = TextAlign.Center
+      )
+    }
+  }
 }

@@ -6,6 +6,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import retrofit2.Retrofit
 import retrofit2.http.GET
 import retrofit2.http.Query
+import retrofit2.http.Url
 
 //Make requests to PokeApi, although we'll only GET data from it
 interface PokeApiService{
