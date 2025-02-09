@@ -2,7 +2,7 @@ package com.keyfall.mypokedex
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class PokemonClass(
+data class Pokemon(
   val id: Int,
   val name: String,
   val baseExperience: Int,
@@ -11,4 +11,18 @@ data class PokemonClass(
   val types: List<String>,
   val moves: List<String>,
   val sprites: List<String>,
+)
+
+@Serializable
+data class PokemonResponse(
+  val id: Int,
+  val name: String,
+)
+
+@Serializable
+data class PokemonApiPagination(
+  val count: Int,
+  val next: String?,
+  val previous: String?,
+  val results: List<PokemonResponse>
 )
