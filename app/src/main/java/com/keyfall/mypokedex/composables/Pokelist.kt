@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
@@ -41,6 +43,8 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -66,17 +70,22 @@ const val limitPerPage = 20
 
 @Composable
 fun Pokelist(searchInput: String){
+  val focusManager = LocalFocusManager.current
+
   var pokemonList by remember { mutableStateOf(listOf<PokemonResponse>()) }
   var isLoadingPokemonList by remember { mutableStateOf(false) }
   var isLoadingSuccessful by remember { mutableStateOf(true) }
+
+  //PAGINATION
   var pokeApiPagination by remember { mutableStateOf<PokemonApiPagination?>(null) }
   val pokelistState = rememberLazyListState()
+  var selectedPokemon by remember { mutableStateOf<String?>(null) }
 
   LaunchedEffect(key1 = Unit) {
     isLoadingPokemonList = true
     withContext(Dispatchers.IO){
       try{
-        val pokeapiResponse = RetroInstance.pokeApiService.getPokemonList(pokemonLimit, 0) //TODO PAGINATION
+        val pokeapiResponse = RetroInstance.pokeApiService.getPokemonList(pokemonLimit, 0)
         pokeApiPagination = pokeapiResponse
         pokemonList = pokeapiResponse.results
       }
@@ -88,14 +97,25 @@ fun Pokelist(searchInput: String){
     }
   }
 
-  Column {
+  Column(
+    modifier = Modifier
+      .pointerInput(Unit){
+        detectDragGestures { _, _ ->
+          focusManager.clearFocus()
+        }
+      }
+  ) {
     if(isLoadingPokemonList){
       LoadingScreen()
     }
     else if(!isLoadingSuccessful){
       ErrorScreen()
     }
+    else if (selectedPokemon != null) {
+      ExpandedPokemon()
+    }
     else{
+      //POKELIST AND FILTERS
       val filteredList = remember(searchInput, pokemonList) {
         if (searchInput.isEmpty()) {
           pokemonList
@@ -111,10 +131,22 @@ fun Pokelist(searchInput: String){
             contentPadding = PaddingValues(25.dp),
             modifier = Modifier
               .fillMaxWidth()
-              .fillMaxHeight(if (searchInput.isEmpty()){.92f} else{1f})
+              .fillMaxHeight(
+                if (searchInput.isEmpty()) {
+                  .92f
+                } else {
+                  1f
+                }
+              )
           ){
             items(filteredList){ pokemon ->
-              Pokecard(pokemon.name, pokemon.url)
+              Pokecard(
+                pokemon.name,
+                pokemon.url,
+                pokeClick = { pokemonUrl ->
+                  selectedPokemon = pokemonUrl
+                }
+              )
             }
           }
         }
@@ -128,7 +160,9 @@ fun Pokelist(searchInput: String){
             .fillMaxHeight()
         ){
           if(searchInput.isEmpty()){
-            PagesRow(pokemonList.size)
+            PagesRow(
+              pokemonList.size,
+            )
           }
         }
       }
@@ -140,10 +174,11 @@ fun getId(url: String): String{
   return url.split("/")[6]
 }
 
-@Composable //TODO ONCLICK
+@Composable
 fun Pokecard(
   name: String,
-  url: String
+  url: String,
+  pokeClick: (String) -> Unit
 ){
   Card(
     content = {
@@ -209,6 +244,9 @@ fun Pokecard(
         ambientColor = Color.Gray,
         spotColor = Color.Gray,
       )
+      .clickable {
+        pokeClick(url)
+      }
 
   )
 }
@@ -226,7 +264,7 @@ fun PagesRow(pokelistSize: Int){
       .padding(horizontal = 50.dp)
   ){
     items(pages){page ->
-      Box( //TODO ONCLICK
+      Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
           .fillMaxHeight()
@@ -237,6 +275,8 @@ fun PagesRow(pokelistSize: Int){
               style = Fill
             )
           }
+          .clip(RoundedCornerShape(17.dp))
+          .clickable { }
       ){
         Text(
           page.toString().padStart(2, '0'),
