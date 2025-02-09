@@ -41,6 +41,13 @@ android {
 }
 
 dependencies {
+  //FOR API CALLS AND (DE)SERIALIZATION
+  implementation(libs.retrofit)
+  implementation(libs.retrofit2.kotlinx.serialization.converter)
+  implementation(libs.kotlinx.coroutines.android)
+  implementation(libs.kotlinx.serialization.json)
+
+  //FOR UI ELEMENTS
   implementation(libs.androidx.ui)
   implementation(libs.androidx.material)
   implementation(libs.ui.tooling.preview)
@@ -48,8 +55,8 @@ dependencies {
   debugImplementation(libs.ui.test.manifest)
   implementation(libs.activity.compose)
   implementation(libs.androidx.graphics.shapes)
-  implementation(libs.kotlinx.serialization.json)
 
+  //DEFAULT PROJECT
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.appcompat)
   implementation(libs.material)
