@@ -61,6 +61,7 @@ val apiCallTextStyle = TextStyle(
 fun Pokelist(){
   var pokemonList by remember { mutableStateOf(listOf<PokemonResponse>()) }
   var isLoadingPokemonList by remember { mutableStateOf(false) }
+  var isLoadingSuccessful by remember { mutableStateOf(true) }
 
   val endlessLoop = rememberInfiniteTransition(label = "infinite transition")
   val pokeballLoop by endlessLoop.animateFloat(
@@ -76,9 +77,12 @@ fun Pokelist(){
     withContext(Dispatchers.IO){
       try{
         val pokeapiResponse = RetroInstance.pokeApiService.getPokemonList(20, 0)
-        pokemonList = pokeapiResponse.results
+        pokemonList = pokeapiResponse.results //TODO TAKE OTHER ARGUMENTS TO DO PAGINATION
       }
-      catch(e: Exception){ Log.e("ErrorLoadingAPIData", e.message.toString()) }
+      catch(e: Exception){
+        Log.e("ErrorLoadingAPIData", e.message.toString())
+        isLoadingSuccessful = false
+      }
       finally { isLoadingPokemonList = false }
     }
   }
@@ -90,7 +94,9 @@ fun Pokelist(){
         modifier = Modifier
           .fillMaxSize()
       ){
-        Column{
+        Column(
+          horizontalAlignment = Alignment.CenterHorizontally
+        ){
           Image(
             painter = painterResource(id = R.drawable.pokeball),
             contentDescription = "pokeball",
@@ -103,6 +109,36 @@ fun Pokelist(){
           Text(
             "Loading...",
             style = apiCallTextStyle,
+            textAlign = TextAlign.Center
+          )
+        }
+      }
+    }
+    else if(!isLoadingSuccessful){
+      Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+          .fillMaxSize()
+      ){
+        Column(
+          horizontalAlignment = Alignment.CenterHorizontally
+        ){
+          Image(
+            painter = painterResource(id = R.drawable.error),
+            contentDescription = "error_image",
+            modifier = Modifier
+              .width(80.dp)
+              .height(80.dp)
+              .padding(bottom = 8.dp)
+          )
+          Text(
+            "Who's this poke-Error?",
+            style = apiCallTextStyle,
+            textAlign = TextAlign.Center
+          )
+          Text(
+            "(Something wrong has happened, please relaunch the app)",
+            style = TextStyle(mainRed, fontSize = 15.sp),
             textAlign = TextAlign.Center
           )
         }
