@@ -370,7 +370,7 @@ fun ErrorScreen(){
         textAlign = TextAlign.Center
       )
       Text(
-        "(Something wrong has happened, please relaunch the app)",
+        "(Something wrong has happened, please try again)",
         style = TextStyle(mainRed, fontSize = 15.sp),
         textAlign = TextAlign.Center
       )

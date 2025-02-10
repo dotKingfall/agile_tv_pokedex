@@ -15,6 +15,9 @@ interface PokeApiService{
     @Query("limit") limit: Int,
     @Query("offset") offset: Int
   ): PokemonApiPagination
+
+  @GET
+  suspend fun getSpecificPokemon(@Url url: String): Pokemon
 }
 
 //Retrofit instance to make API calls for pokemon list data
