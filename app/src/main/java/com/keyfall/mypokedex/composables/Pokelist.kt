@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -77,10 +78,12 @@ fun Pokelist(
   val focusManager = LocalFocusManager.current
 
   var pokemonList by remember { mutableStateOf(listOf<PokemonResponse>()) }
+  var paginatedPokemonList by remember { mutableStateOf(listOf<List<PokemonResponse>>()) }
   var isLoadingPokemonList by remember { mutableStateOf(false) }
   var isLoadingSuccessful by remember { mutableStateOf(true) }
 
   //PAGINATION
+  var currentPage by remember { mutableIntStateOf(1) }
   var pokeApiPagination by remember { mutableStateOf<PokemonApiPagination?>(null) }
   val pokelistState = rememberLazyListState()
 
@@ -91,6 +94,7 @@ fun Pokelist(
         val pokeapiResponse = RetroInstance.pokeApiService.getPokemonList(pokemonLimit, 0)
         pokeApiPagination = pokeapiResponse
         pokemonList = pokeapiResponse.results
+        paginatedPokemonList = pokemonList.chunked(limitPerPage)
       }
       catch(e: Exception){
         Log.e("ErrorLoadingAPIData", e.message.toString())
@@ -119,11 +123,15 @@ fun Pokelist(
     }
     else{
       //POKELIST AND FILTERS
-      val filteredList = remember(searchInput, pokemonList) {
+      val filteredList = remember(searchInput, paginatedPokemonList, currentPage) {
         if (searchInput.isEmpty()) {
-          pokemonList
+          if (paginatedPokemonList.isNotEmpty()) {
+            paginatedPokemonList[currentPage - 1]
+          } else {
+            emptyList()
+          }
         } else {
-          pokemonList.filter { it.name.contains(searchInput, ignoreCase = true) }
+          pokemonList.filter { it.name.contains(searchInput, ignoreCase = true) } // Filter the entire list
         }
       }
 
@@ -165,6 +173,9 @@ fun Pokelist(
           if(searchInput.isEmpty()){
             PagesRow(
               pokemonList.size,
+              changeCurrentPage = { newPage ->
+                currentPage = newPage
+              }
             )
           }
         }
@@ -255,7 +266,10 @@ fun Pokecard(
 }
 
 @Composable
-fun PagesRow(pokelistSize: Int){
+fun PagesRow(
+  pokelistSize: Int,
+  changeCurrentPage: (Int) -> Unit
+){
   val limit = (pokelistSize / limitPerPage)
   val pages = List(limit){it + 1}
 
@@ -279,7 +293,9 @@ fun PagesRow(pokelistSize: Int){
             )
           }
           .clip(RoundedCornerShape(17.dp))
-          .clickable { }
+          .clickable {
+            changeCurrentPage(page)
+          }
       ){
         Text(
           page.toString().padStart(2, '0'),
