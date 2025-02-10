@@ -1,12 +1,15 @@
 package com.keyfall.mypokedex.composables
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.res.painterResource
@@ -29,8 +33,14 @@ import com.keyfall.mypokedex.searchHintStyle
 import com.keyfall.mypokedex.searchInputStyle
 
 @Composable
-fun FakeAppBar(searchInput: String, onSearchInputChange: (String) -> Unit){
+fun FakeAppBar(
+  searchInput: String,
+  onSearchInputChange: (String) -> Unit,
+  selectedPokemon: String?,
+  changeSelectedPokemonState: (String?) -> Unit
+  ){
   var hideHintText by remember { mutableStateOf(true) }
+  val interactionSrc = remember { MutableInteractionSource() }
 
   Box(
     modifier = Modifier
@@ -69,40 +79,63 @@ fun FakeAppBar(searchInput: String, onSearchInputChange: (String) -> Unit){
           .aspectRatio(16f / 9f)
       )
 
-      BasicTextField(
-        value = searchInput,
-        maxLines = 1,
-        singleLine = true,
-        textStyle = searchInputStyle,
-        onValueChange = { newSearchInput ->
-          onSearchInputChange(newSearchInput)
-        },
-        modifier = Modifier
-          .align(Alignment.BottomEnd)
-          .fillMaxWidth(.47f)
-          .height(45.dp)
-          .padding(top = 10.dp, end = 15.dp)
-          .onFocusChanged {
-            hideHintText = if (searchInput.isEmpty()) !hideHintText else hideHintText
-          }
-          .drawBehind {
-            if (hideHintText) {
-              drawLine(
-                color = mainRed,
-                start = Offset(0f, size.height),
-                end = Offset(size.width, size.height),
-                strokeWidth = 3.dp.toPx()
-              )
-            }
-          }
-      )
-
-      if(!hideHintText){
-        Text(text = "Search...", style = searchHintStyle,
+      if(selectedPokemon == null){
+        BasicTextField(
+          value = searchInput,
+          interactionSource = interactionSrc,
+          maxLines = 1,
+          singleLine = true,
+          textStyle = searchInputStyle,
+          onValueChange = { newSearchInput ->
+            onSearchInputChange(newSearchInput)
+          },
           modifier = Modifier
             .align(Alignment.BottomEnd)
-            .padding(bottom = 8.dp, end = 55.dp)
+            .fillMaxWidth(.47f)
+            .height(45.dp)
+            .padding(top = 10.dp, end = 15.dp)
+            .onFocusChanged {
+              hideHintText = if (searchInput.isEmpty()) !hideHintText else hideHintText
+            }
+            .drawBehind {
+              if (hideHintText) {
+                drawLine(
+                  color = mainRed,
+                  start = Offset(0f, size.height),
+                  end = Offset(size.width, size.height),
+                  strokeWidth = 3.dp.toPx()
+                )
+              }
+            }
         )
+
+        if(!hideHintText){
+          Text(text = "Search...", style = searchHintStyle,
+            modifier = Modifier
+              .align(Alignment.BottomEnd)
+              .padding(bottom = 8.dp, end = 55.dp)
+          )
+        }
+      }
+      else{
+        Box(
+          modifier = Modifier
+            .fillMaxSize()
+            .padding(end = 80.dp, bottom = 5.dp)
+        ){
+          Image(
+            painter = painterResource(id = R.drawable.back),
+            colorFilter = ColorFilter.tint(mainRed),
+            contentDescription = "Back",
+            modifier = Modifier
+              .clickable {
+                changeSelectedPokemonState(null)
+                hideHintText = true
+              }
+              .align(Alignment.BottomEnd)
+              .size(40.dp)
+          )
+        }
       }
     }
   }

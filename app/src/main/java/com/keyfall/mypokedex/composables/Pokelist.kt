@@ -69,7 +69,11 @@ const val pokemonLimit = 3000
 const val limitPerPage = 20
 
 @Composable
-fun Pokelist(searchInput: String){
+fun Pokelist(
+  searchInput: String,
+  selectedPokemon: String?,
+  changeSelectedPokemonState: (String?) -> Unit
+){
   val focusManager = LocalFocusManager.current
 
   var pokemonList by remember { mutableStateOf(listOf<PokemonResponse>()) }
@@ -79,7 +83,6 @@ fun Pokelist(searchInput: String){
   //PAGINATION
   var pokeApiPagination by remember { mutableStateOf<PokemonApiPagination?>(null) }
   val pokelistState = rememberLazyListState()
-  var selectedPokemon by remember { mutableStateOf<String?>(null) }
 
   LaunchedEffect(key1 = Unit) {
     isLoadingPokemonList = true
@@ -112,7 +115,7 @@ fun Pokelist(searchInput: String){
       ErrorScreen()
     }
     else if (selectedPokemon != null) {
-      ExpandedPokemon()
+      ExpandedPokemon(selectedPokemon)
     }
     else{
       //POKELIST AND FILTERS
@@ -144,7 +147,7 @@ fun Pokelist(searchInput: String){
                 pokemon.name,
                 pokemon.url,
                 pokeClick = { pokemonUrl ->
-                  selectedPokemon = pokemonUrl
+                  changeSelectedPokemonState(pokemonUrl)
                 }
               )
             }

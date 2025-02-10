@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity() {
 @Composable
 fun MyPokedex(){
   var searchInput by remember { mutableStateOf("") }
+  var selectedPokemon by remember { mutableStateOf<String?>(null) }
   val focusManager = LocalFocusManager.current
 
 
@@ -60,9 +61,16 @@ fun MyPokedex(){
       )
 
       Box{
-        FakeAppBar(searchInput){newSearchInput ->
-          searchInput = newSearchInput
-        }
+        FakeAppBar(
+          searchInput,
+          onSearchInputChange = { newSearchInput ->
+            searchInput = newSearchInput
+          },
+          selectedPokemon,
+          changeSelectedPokemonState = { newSelectedPokemon ->
+            selectedPokemon = newSelectedPokemon
+          }
+        )
         Box( // remove focus from textfield if tapped outside
           modifier = Modifier
             .fillMaxSize()
@@ -80,7 +88,13 @@ fun MyPokedex(){
               )
             }
         ){
-          Pokelist(searchInput)
+          Pokelist(
+            searchInput,
+            selectedPokemon,
+            changeSelectedPokemonState = { newSelectedPokemon ->
+              selectedPokemon = newSelectedPokemon
+            }
+          )
         }
       }
     }
