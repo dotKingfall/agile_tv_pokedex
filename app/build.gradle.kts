@@ -41,6 +41,9 @@ android {
 }
 
 dependencies {
+  //ASYNCHRONOUS LOADING
+  implementation(libs.coil.compose)
+
   //FOR API CALLS AND (DE)SERIALIZATION
   implementation(libs.retrofit)
   implementation(libs.retrofit2.kotlinx.serialization.converter)
